@@ -1,0 +1,70 @@
+version: '3.9'
+
+services: 
+    api-server:
+        restart: always 
+        image: api-server
+        build: 
+            context: ./back/
+            dockerfile: Dockerfile
+        container_name: library_mean_nginx
+        ports: 
+            - "5000:5000"
+        networks: 
+            - mean-app
+        depends_on: 
+            - mongo
+        volumes: 
+            - ./back/:/app
+            - ./app/node_modules
+        environment:
+          NODE_ENV: ${NODE_ENV}
+    mongo:
+        restart: always 
+        image: mongo:4.4-bionic
+        # ports: 
+        #     - "27017:27017"
+        networks: 
+            - mean-app
+        volumes: 
+            - mongo-data:/data/db
+
+    client:
+      restart: always
+      build: 
+        context: ./front/
+        dockerfile: Dockerfile
+      image: client
+      container_name: library_mean_front
+      volumes:
+          - ./front/:/app
+          - ./app/node_modules
+      ports: 
+        - "4200:80"
+      depends_on:
+        - api-server
+      networks: 
+        - mean-app
+
+    nginx: 
+      restart: always
+      depends_on: 
+        - api-server
+        - client
+      build: 
+        context: ./nginx/
+        dockerfile: Dockerfile
+      ports: 
+        - "80:80"
+      networks: 
+        - mean-app
+        
+networks: 
+    mean-app:
+        driver: bridge
+volumes: 
+    mongo-data:
+        driver: local
+
+
+
